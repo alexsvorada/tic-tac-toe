@@ -1,0 +1,49 @@
+# Node modules
+/node_modules/
+
+# Build output
+/dist/
+/dist-ssr/
+
+# Vite cache
+/.vite/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+*.tmp
+*.swp
+
+# IDE and editor settings
+/.idea/
+/.vscode/*
+!.vscode/extensions.json
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Miscellaneous
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# MacOS Finder settings
+*.DS_Store
+
+# Windows thumbnail cache
+Thumbs.db
