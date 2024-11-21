@@ -1,56 +1,49 @@
 <script setup lang="ts">
-  import { Player } from '../composables/useTicTacToe'
+	import type { Player } from '../types/ticTacToe'
 
-  const props = defineProps<{
-    owner: Player | null
-    currentPlayerSymbol: Player['symbol']
-    hovered: boolean
-  }>()
+	defineProps<{
+		owner: Player | null
+		currentPlayerSymbol: string
+		hovered: boolean
+		isInActiveBoard: boolean
+	}>()
 
-  const emit = defineEmits(['click', 'hover', 'unhover'])
-
-  const clickEvent = () => {
-    if (!props.owner) {
-      emit('click')
-    }
-  }
-
-  const hoverEvent = () => {
-    if (!props.owner) {
-      emit('hover')
-    }
-  }
-
-  const unhoverEvent = () => {
-    emit('unhover')
-  }
+	const emit = defineEmits<{
+		(e: 'click'): void
+		(e: 'hover'): void
+		(e: 'unhover'): void
+	}>()
 </script>
 
 <template>
-  <button class="square" @click="clickEvent" @mouseenter="hoverEvent" @mouseleave="unhoverEvent">
-    <template v-if="props.owner">
-      {{ props.owner.symbol }}
-    </template>
-    <template v-else-if="hovered">
-      <span class="hovered">{{ currentPlayerSymbol }}</span>
-    </template>
-    <template v-else> &nbsp; </template>
-  </button>
+	<button
+		:class="['square', { clickable: isInActiveBoard }]"
+		@click="!owner && emit('click')"
+		@mouseenter="!owner && emit('hover')"
+		@mouseleave="emit('unhover')">
+		<span :class="{ preview: hovered }">
+			{{ owner?.symbol || (hovered ? currentPlayerSymbol : '') }}
+		</span>
+	</button>
 </template>
 
 <style scoped>
-  .hovered {
-    opacity: 50%;
-  }
+	.square {
+		width: 36px;
+		height: 36px;
+		display: grid;
+		place-items: center;
+		background-color: #333;
+		border: 1px solid black;
+		transition: background-color 0.3s ease;
+		cursor: default;
+	}
 
-  .square {
-    width: 100px;
-    height: 100px;
-    border: 1px solid black;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    cursor: pointer;
-  }
+	.clickable {
+		cursor: pointer;
+	}
+
+	.preview {
+		opacity: 0.5;
+	}
 </style>

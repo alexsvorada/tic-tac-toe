@@ -1,102 +1,115 @@
 import { ref, computed } from 'vue'
-
-export interface Player {
-  symbol: string
-}
-
-export interface Square {
-  id: number
-  owner: Player | null
-  hovered: boolean
-}
+import type { Player, GameState, SubBoard } from '../types/ticTacToe'
+import { checkWinner, checkDraw, createInitialBoard } from '../utils/gameUtils'
 
 export function useTicTacToe() {
-  const players: Player[] = [{ symbol: 'X' }, { symbol: 'O' }]
-  const currentPlayerIndex = ref(0)
-  const winner = ref<Player | null>(null)
-  const isDraw = ref(false)
+	const players: Player[] = [{ symbol: 'X' }, { symbol: 'O' }]
+	const gameState = ref<GameState>({
+		currentPlayerIndex: 0,
+		winner: null,
+		isDraw: false,
+		activeBoard: null,
+		availableBoards: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+		previewNextBoard: [],
+		board: createInitialBoard(),
+	})
 
-  const board = ref<Square[]>(
-    Array(9)
-      .fill(null)
-      .map((_, id) => ({ id, owner: null, hovered: false }))
-  )
+	const currentPlayer = computed(() => players[gameState.value.currentPlayerIndex])
+	const gameOver = computed(() => gameState.value.winner !== null || gameState.value.isDraw)
 
-  const currentPlayer = computed(() => players[currentPlayerIndex.value])
+	function removeFromAvailable(boardId: number) {
+		gameState.value.availableBoards = gameState.value.availableBoards.filter((id) => id !== boardId)
+	}
 
-  const gameOver = computed(() => winner.value !== null || isDraw.value)
+	function handleWinner(boardId: number, subBoard: SubBoard) {
+		subBoard.winner = currentPlayer.value
+		removeFromAvailable(boardId)
 
-  const winningCombinations = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6],
-  ]
+		const mainBoardSquares = gameState.value.board.map((b) => ({
+			id: b.id,
+			owner: b.winner,
+			hovered: false,
+		}))
 
-  function resetGame() {
-    board.value.forEach((square) => {
-      square.owner = null
-      square.hovered = false
-    })
-    currentPlayerIndex.value = 0
-    winner.value = null
-    isDraw.value = false
-  }
+		if (checkWinner(mainBoardSquares)) {
+			gameState.value.winner = currentPlayer.value
+		}
+	}
 
-  function checkWinner(): boolean {
-    return winningCombinations.some((combination) => {
-      const [a, b, c] = combination
-      return (
-        board.value[a].owner &&
-        board.value[a].owner === board.value[b].owner &&
-        board.value[a].owner === board.value[c].owner
-      )
-    })
-  }
+	function handleDraw(boardId: number, subBoard: SubBoard) {
+		subBoard.isDraw = true
+		removeFromAvailable(boardId)
 
-  function checkDraw(): boolean {
-    return board.value.every((square) => square.owner !== null)
-  }
+		if (gameState.value.board.every((b) => b.winner !== null || b.isDraw)) {
+			gameState.value.isDraw = true
+		}
+	}
 
-  function makeMove(squareId: number) {
-    if (gameOver.value || board.value[squareId].owner !== null) return
+	function updateGameState(squareId: number) {
+		gameState.value.activeBoard = gameState.value.availableBoards.includes(squareId) ? squareId : null
+		gameState.value.currentPlayerIndex = (gameState.value.currentPlayerIndex + 1) % 2
+	}
 
-    board.value[squareId].owner = currentPlayer.value
+	function resetGame() {
+		gameState.value = {
+			currentPlayerIndex: 0,
+			winner: null,
+			isDraw: false,
+			activeBoard: null,
+			availableBoards: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+			previewNextBoard: [],
+			board: createInitialBoard(),
+		}
+	}
 
-    if (checkWinner()) {
-      winner.value = currentPlayer.value
-    } else if (checkDraw()) {
-      isDraw.value = true
-    } else {
-      currentPlayerIndex.value = (currentPlayerIndex.value + 1) % 2
-    }
-  }
+	function makeMove(boardId: number, squareId: number) {
+		if (gameOver.value) return
+		if (gameState.value.activeBoard !== null && gameState.value.activeBoard !== boardId) return
 
-  function hoverMove(squareId: number) {
-    if (!gameOver.value && board.value[squareId].owner === null && !board.value[squareId].hovered) {
-      board.value[squareId].hovered = true
-    }
-  }
+		const subBoard = gameState.value.board[boardId]
+		const square = subBoard.squares[squareId]
 
-  function unhoverMove(squareId: number) {
-    if (board.value[squareId].hovered) {
-      board.value[squareId].hovered = false
-    }
-  }
+		if (subBoard.winner || subBoard.isDraw || square.owner !== null) return
 
-  return {
-    board,
-    currentPlayer,
-    winner,
-    isDraw,
-    gameOver,
-    resetGame,
-    makeMove,
-    hoverMove,
-    unhoverMove,
-  }
+		square.owner = currentPlayer.value
+
+		if (checkWinner(subBoard.squares)) {
+			handleWinner(boardId, subBoard)
+		} else if (checkDraw(subBoard.squares)) {
+			handleDraw(boardId, subBoard)
+		}
+
+		updateGameState(squareId)
+	}
+
+	function hoverMove(boardId: number, squareId: number) {
+		if (
+			!gameOver.value &&
+			(gameState.value.activeBoard === null || gameState.value.activeBoard === boardId) &&
+			!gameState.value.board[boardId].winner &&
+			!gameState.value.board[boardId].isDraw &&
+			gameState.value.board[boardId].squares[squareId].owner === null
+		) {
+			gameState.value.board[boardId].squares[squareId].hovered = true
+
+			gameState.value.previewNextBoard = !gameState.value.availableBoards.includes(squareId)
+				? [...gameState.value.availableBoards]
+				: [squareId]
+		}
+	}
+
+	function unhoverMove(boardId: number, squareId: number) {
+		gameState.value.board[boardId].squares[squareId].hovered = false
+		gameState.value.previewNextBoard = []
+	}
+
+	return {
+		gameState,
+		currentPlayer,
+		gameOver,
+		resetGame,
+		makeMove,
+		hoverMove,
+		unhoverMove,
+	}
 }
