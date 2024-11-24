@@ -2,6 +2,16 @@
 
 A modern implementation of Ultimate Tic-Tac-Toe built with Vue 3 and TypeScript. This game extends the classic Tic-Tac-Toe by creating a game board made up of nine individual Tic-Tac-Toe boards.
 
+## 🎯 Game Features
+
+-   Interactive game board
+-   Turn indicators
+-   Win detection
+-   Draw detection
+-   Board highlighting for valid moves
+-   Move previews
+-   Reset functionality
+
 ## 🎮 Game Rules
 
 1. The game board consists of 9 smaller Tic-Tac-Toe boards arranged in a 3x3 grid
@@ -71,13 +81,3 @@ src/
 └── utils/
     └── gameUtils.ts
 ```
-
-## 🎯 Game Features
-
--   Interactive game board
--   Turn indicators
--   Win detection
--   Draw detection
--   Board highlighting for valid moves
--   Move previews
--   Reset functionality
